@@ -61,6 +61,7 @@
     "rollup-plugin-dts": "^6.0.0"
   },
   "dependencies": {
+    "dotenv": "^17.2.2",
     "uuid": "^9.0.0"
   },
   "engines": {
