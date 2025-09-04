@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarzPay JavaScript Library - Comprehensive Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .phone-formats {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .api-status {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 MarzPay JavaScript Library - Professional Demo</h1>
+        <p style="text-align: center; color: #7f8c8d; margin-bottom: 30px;">
+            Comprehensive Mobile Money Payment Platform for Uganda - Full API Coverage
+        </p>
+
+        <div class="api-status">
+            <strong>📊 API Coverage:</strong> Collections • Disbursements • Accounts • Balance • Transactions • Services • Webhooks
+        </div>
+
+        <div class="phone-formats">
+            <strong>📱 Supported Phone Number Formats:</strong><br>
+            • 0759983853 (local format) • 256759983853 (country code) • +256759983853 (international format)
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="section">
+            <h3>⚙️ Configuration</h3>
+            <div class="form-group">
+                <label for="apiUser">API User:</label>
+                <input type="text" id="apiUser" placeholder="Enter your MarzPay API username">
+            </div>
+            <div class="form-group">
+                <label for="apiKey">API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your MarzPay API key">
+            </div>
+            <button onclick="initializeMarzPay()">Initialize MarzPay</button>
+            <div id="configResult"></div>
+        </div>
+
+        <div class="grid">
+            <!-- Collections Section -->
+            <div class="section">
+                <h3>💰 Collections API</h3>
+                <div class="form-group">
+                    <label for="collectAmount">Amount (UGX):</label>
+                    <input type="number" id="collectAmount" placeholder="500" min="500" max="10000000">
+                </div>
+                <div class="form-group">
+                    <label for="collectPhone">Phone Number:</label>
+                    <input type="text" id="collectPhone" placeholder="0759983853">
+                </div>
+                <div class="form-group">
+                    <label for="collectDescription">Description:</label>
+                    <input type="text" id="collectDescription" placeholder="Payment for services">
+                </div>
+                <button onclick="collectMoney()">Collect Money</button>
+                <button onclick="getCollectionServices()">Get Services</button>
+                <div id="collectResult"></div>
+            </div>
+
+            <!-- Disbursements Section -->
+            <div class="section">
+                <h3>💸 Disbursements API</h3>
+                <div class="form-group">
+                    <label for="sendAmount">Amount (UGX):</label>
+                    <input type="number" id="sendAmount" placeholder="1000" min="1000" max="500000">
+                </div>
+                <div class="form-group">
+                    <label for="sendPhone">Phone Number:</label>
+                    <input type="text" id="sendPhone" placeholder="0759983853">
+                </div>
+                <div class="form-group">
+                    <label for="sendDescription">Description:</label>
+                    <input type="text" id="sendDescription" placeholder="Refund payment">
+                </div>
+                <button onclick="sendMoney()">Send Money</button>
+                <button onclick="getDisbursementServices()">Get Services</button>
+                <div id="sendResult"></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Account Section -->
+            <div class="section">
+                <h3>🏦 Account Management</h3>
+                <button onclick="getAccountInfo()">Get Account Info</button>
+                <button onclick="updateAccount()">Update Account</button>
+                <div id="accountResult"></div>
+            </div>
+
+            <!-- Balance Section -->
+            <div class="section">
+                <h3>💰 Balance Management</h3>
+                <button onclick="getBalance()">Get Balance</button>
+                <button onclick="getBalanceHistory()">Get History</button>
+                <div id="balanceResult"></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Transactions Section -->
+            <div class="section">
+                <h3>📊 Transactions</h3>
+                <button onclick="getTransactions()">Get All Transactions</button>
+                <button onclick="getTransaction()">Get Transaction</button>
+                <div class="form-group">
+                    <label for="transactionUuid">Transaction UUID:</label>
+                    <input type="text" id="transactionUuid" placeholder="Enter transaction UUID">
+                </div>
+                <div id="transactionsResult"></div>
+            </div>
+
+            <!-- Services Section -->
+            <div class="section">
+                <h3>🔧 Services</h3>
+                <button onclick="getServices()">Get All Services</button>
+                <button onclick="getService()">Get Service</button>
+                <div class="form-group">
+                    <label for="serviceUuid">Service UUID:</label>
+                    <input type="text" id="serviceUuid" placeholder="Enter service UUID">
+                </div>
+                <div id="servicesResult"></div>
+            </div>
+        </div>
+
+        <!-- Webhooks Section -->
+        <div class="section">
+            <h3>🔗 Webhooks Management</h3>
+            <div class="form-group">
+                <label for="webhookName">Webhook Name:</label>
+                <input type="text" id="webhookName" placeholder="Payment Notification">
+            </div>
+            <div class="form-group">
+                <label for="webhookUrl">Webhook URL:</label>
+                <input type="url" id="webhookUrl" placeholder="https://yoursite.com/webhook">
+            </div>
+            <div class="form-group">
+                <label for="webhookEventType">Event Type:</label>
+                <select id="webhookEventType">
+                    <option value="collection.completed">Collection Completed</option>
+                    <option value="collection.failed">Collection Failed</option>
+                    <option value="success">Success</option>
+                    <option value="failure">Failure</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="webhookEnvironment">Environment:</label>
+                <select id="webhookEnvironment">
+                    <option value="test">Test</option>
+                    <option value="production">Production</option>
+                </select>
+            </div>
+            <button onclick="createWebhook()">Create Webhook</button>
+            <button onclick="getWebhooks()">Get Webhooks</button>
+            <div id="webhooksResult"></div>
+        </div>
+
+        <!-- Utilities Section -->
+        <div class="section">
+            <h3>🛠️ Utilities & Validation</h3>
+            <div class="form-group">
+                <label for="testPhone">Test Phone Number:</label>
+                <input type="text" id="testPhone" placeholder="0759983853">
+            </div>
+            <button onclick="testPhoneValidation()">Test Phone Validation</button>
+            <button onclick="generateReference()">Generate Reference</button>
+            <button onclick="testUUIDValidation()">Test UUID Validation</button>
+            <div id="utilsResult"></div>
+        </div>
+    </div>
+
+    <!-- Include the MarzPay library -->
+    <script src="../dist/marzpay.min.js"></script>
+    
+    <script>
+        let marzpay = null;
+
+        function initializeMarzPay() {
+            const apiUser = document.getElementById('apiUser').value;
+            const apiKey = document.getElementById('apiKey').value;
+
+            if (!apiUser || !apiKey) {
+                showResult('configResult', 'Please enter both API User and API Key', 'error');
+                return;
+            }
+
+            try {
+                marzpay = new MarzPay({
+                    apiUser: apiUser,
+                    apiKey: apiKey
+                });
+                showResult('configResult', '✅ MarzPay initialized successfully!\n\nReady to use all APIs:\n• Collections • Disbursements • Accounts • Balance • Transactions • Services • Webhooks', 'success');
+            } catch (error) {
+                showResult('configResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function collectMoney() {
+            if (!marzpay) {
+                showResult('collectResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const amount = parseInt(document.getElementById('collectAmount').value);
+            const phone = document.getElementById('collectPhone').value;
+            const description = document.getElementById('collectDescription').value;
+
+            if (!amount || !phone) {
+                showResult('collectResult', 'Please enter amount and phone number', 'error');
+                return;
+            }
+
+            try {
+                showResult('collectResult', '🔄 Processing collection request...', 'info');
+                
+                const result = await marzpay.collections.collectMoney({
+                    amount: amount,
+                    phoneNumber: phone,
+                    description: description || null
+                });
+
+                showResult('collectResult', `✅ Collection successful!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('collectResult', `❌ Collection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendMoney() {
+            if (!marzpay) {
+                showResult('sendResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const amount = parseInt(document.getElementById('sendAmount').value);
+            const phone = document.getElementById('sendPhone').value;
+            const description = document.getElementById('sendDescription').value;
+
+            if (!amount || !phone) {
+                showResult('sendResult', 'Please enter amount and phone number', 'error');
+                return;
+            }
+
+            try {
+                showResult('sendResult', '🔄 Processing disbursement request...', 'info');
+                
+                const result = await marzpay.disbursements.sendMoney({
+                    amount: amount,
+                    phoneNumber: phone,
+                    description: description || null
+                });
+
+                showResult('sendResult', `✅ Disbursement successful!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('sendResult', `❌ Disbursement failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function getAccountInfo() {
+            if (!marzpay) {
+                showResult('accountResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.accounts.getAccountInfo();
+                showResult('accountResult', `🏦 Account Info: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('accountResult', `❌ Error getting account info: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateAccount() {
+            if (!marzpay) {
+                showResult('accountResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.accounts.updateAccount({
+                    business_name: 'Updated Business Name',
+                    contact_phone: '+256759983853'
+                });
+                showResult('accountResult', `✅ Account updated: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('accountResult', `❌ Error updating account: ${error.message}`, 'error');
+            }
+        }
+
+        async function getBalance() {
+            if (!marzpay) {
+                showResult('balanceResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.balance.getBalance();
+                showResult('balanceResult', `💰 Balance: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('balanceResult', `❌ Error getting balance: ${error.message}`, 'error');
+            }
+        }
+
+        async function getBalanceHistory() {
+            if (!marzpay) {
+                showResult('balanceResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.balance.getBalanceHistory({
+                    page: 1,
+                    per_page: 10
+                });
+                showResult('balanceResult', `📊 Balance History: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('balanceResult', `❌ Error getting balance history: ${error.message}`, 'error');
+            }
+        }
+
+        async function getTransactions() {
+            if (!marzpay) {
+                showResult('transactionsResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.transactions.getTransactions({
+                    page: 1,
+                    per_page: 10
+                });
+                showResult('transactionsResult', `📊 Transactions: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('transactionsResult', `❌ Error getting transactions: ${error.message}`, 'error');
+            }
+        }
+
+        async function getTransaction() {
+            if (!marzpay) {
+                showResult('transactionsResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const uuid = document.getElementById('transactionUuid').value;
+            if (!uuid) {
+                showResult('transactionsResult', 'Please enter transaction UUID', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.transactions.getTransaction(uuid);
+                showResult('transactionsResult', `📊 Transaction: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('transactionsResult', `❌ Error getting transaction: ${error.message}`, 'error');
+            }
+        }
+
+        async function getServices() {
+            if (!marzpay) {
+                showResult('servicesResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.services.getServices();
+                showResult('servicesResult', `🔧 Services: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('servicesResult', `❌ Error getting services: ${error.message}`, 'error');
+            }
+        }
+
+        async function getService() {
+            if (!marzpay) {
+                showResult('servicesResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const uuid = document.getElementById('serviceUuid').value;
+            if (!uuid) {
+                showResult('servicesResult', 'Please enter service UUID', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.services.getService(uuid);
+                showResult('servicesResult', `🔧 Service: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('servicesResult', `❌ Error getting service: ${error.message}`, 'error');
+            }
+        }
+
+        async function getCollectionServices() {
+            if (!marzpay) {
+                showResult('collectResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.collections.getCollectionServices();
+                showResult('collectResult', `🔧 Collection Services: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('collectResult', `❌ Error getting collection services: ${error.message}`, 'error');
+            }
+        }
+
+        async function getDisbursementServices() {
+            if (!marzpay) {
+                showResult('sendResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.disbursements.getDisbursementServices();
+                showResult('sendResult', `🔧 Disbursement Services: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('sendResult', `❌ Error getting disbursement services: ${error.message}`, 'error');
+            }
+        }
+
+        async function createWebhook() {
+            if (!marzpay) {
+                showResult('webhooksResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const name = document.getElementById('webhookName').value;
+            const url = document.getElementById('webhookUrl').value;
+            const eventType = document.getElementById('webhookEventType').value;
+            const environment = document.getElementById('webhookEnvironment').value;
+
+            if (!name || !url || !eventType || !environment) {
+                showResult('webhooksResult', 'Please fill all webhook fields', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.webhooks.createWebhook({
+                    name: name,
+                    url: url,
+                    eventType: eventType,
+                    environment: environment
+                });
+                showResult('webhooksResult', `✅ Webhook created: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('webhooksResult', `❌ Error creating webhook: ${error.message}`, 'error');
+            }
+        }
+
+        async function getWebhooks() {
+            if (!marzpay) {
+                showResult('webhooksResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            try {
+                const result = await marzpay.webhooks.getWebhooks();
+                showResult('webhooksResult', `🔗 Webhooks: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('webhooksResult', `❌ Error getting webhooks: ${error.message}`, 'error');
+            }
+        }
+
+        function testPhoneValidation() {
+            if (!marzpay) {
+                showResult('utilsResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const phone = document.getElementById('testPhone').value;
+            if (!phone) {
+                showResult('utilsResult', 'Please enter a phone number to test', 'error');
+                return;
+            }
+
+            const isValid = marzpay.utils.isValidPhoneNumber(phone);
+            const formatted = marzpay.utils.formatPhoneNumber(phone);
+            
+            showResult('utilsResult', 
+                `📱 Phone Validation Results:\n\n` +
+                `Input: ${phone}\n` +
+                `Valid: ${isValid ? '✅ Yes' : '❌ No'}\n` +
+                `Formatted: ${formatted || 'Invalid format'}`, 
+                isValid ? 'success' : 'error'
+            );
+        }
+
+        function generateReference() {
+            if (!marzpay) {
+                showResult('utilsResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const reference = marzpay.utils.generateReference();
+            showResult('utilsResult', `🔑 Generated Reference: ${reference}`, 'success');
+        }
+
+        function testUUIDValidation() {
+            if (!marzpay) {
+                showResult('utilsResult', 'Please initialize MarzPay first', 'error');
+                return;
+            }
+
+            const testUUID = '550e8400-e29b-41d4-a716-446655440000';
+            const isValid = marzpay.utils.isValidUUID(testUUID);
+            showResult('utilsResult', `🔍 UUID Validation Test:\n\nUUID: ${testUUID}\nValid: ${isValid ? '✅ Yes' : '❌ No'}`, 'success');
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        // Auto-fill with sample data for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('collectAmount').value = '5000';
+            document.getElementById('collectPhone').value = '0759983853';
+            document.getElementById('collectDescription').value = 'Payment for services';
+            document.getElementById('sendAmount').value = '1000';
+            document.getElementById('sendPhone').value = '0759983853';
+            document.getElementById('sendDescription').value = 'Refund payment';
+            document.getElementById('webhookName').value = 'Payment Notification';
+            document.getElementById('webhookUrl').value = 'https://yoursite.com/webhook';
+        });
+    </script>
+</body>
+</html>
