@@ -17,7 +17,7 @@ import { MarzPayError } from '../errors/MarzPayError.js';
  * const result = await marzpay.disbursements.sendMoney({
  *   amount: 5000,
  *   phoneNumber: '0759983853',
- *   reference: 'ref-123456',
+ *   reference: '550e8400-e29b-41d4-a716-446655440000',
  *   description: 'Refund payment'
  * });
  * ```
@@ -33,7 +33,7 @@ export class DisbursementsAPI {
    * @param {Object} params - Disbursement parameters
    * @param {number} params.amount - Amount in UGX (1,000-500,000)
    * @param {string} params.phoneNumber - Customer's phone number
-   * @param {string} params.reference - Unique reference for the transaction
+   * @param {string} params.reference - Unique UUID4 reference for the transaction
    * @param {string|null} [params.description] - Payment description
    * @param {string|null} [params.callbackUrl] - Custom webhook URL
    * @param {string} [params.country='UG'] - Country code
@@ -48,7 +48,7 @@ export class DisbursementsAPI {
    *   const result = await marzpay.disbursements.sendMoney({
    *     amount: 10000,
    *     phoneNumber: '0759983853',
-   *     reference: 'refund-12345',
+   *     reference: '550e8400-e29b-41d4-a716-446655440000',
    *     description: 'Refund payment',
    *     callbackUrl: 'https://yoursite.com/webhook'
    *   });
@@ -91,41 +91,6 @@ export class DisbursementsAPI {
   }
 
   /**
-   * Send money with auto-generated reference
-   * 
-   * @param {Object} params - Disbursement parameters (without reference)
-   * @param {number} params.amount - Amount in UGX (1,000-500,000)
-   * @param {string} params.phoneNumber - Customer's phone number
-   * @param {string|null} [params.description] - Payment description
-   * @param {string|null} [params.callbackUrl] - Custom webhook URL
-   * @param {string} [params.country='UG'] - Country code
-   * 
-   * @returns {Promise<Object>} Disbursement result with auto-generated reference
-   * 
-   * @example
-   * ```javascript
-   * // Auto-generate reference
-   * const result = await marzpay.disbursements.sendMoneyAuto({
-   *   amount: 10000,
-   *   phoneNumber: '0759983853',
-   *   description: 'Refund payment'
-   * });
-   * 
-   * console.log('Auto-generated reference:', result.data.transaction.reference);
-   * ```
-   */
-  async sendMoneyAuto(params) {
-    // Generate a unique reference
-    const reference = uuidv4();
-    
-    // Call the main sendMoney method with the generated reference
-    return this.sendMoney({
-      ...params,
-      reference
-    });
-  }
-
-  /**
    * Get disbursement details by UUID
    * 
    * @param {string} uuid - Disbursement transaction UUID
@@ -135,7 +100,7 @@ export class DisbursementsAPI {
    * 
    * @example
    * ```javascript
-   * const disbursement = await marzpay.disbursements.getDisbursement('uuid-here');
+   * const disbursement = await marzpay.disbursements.getDisbursement('550e8400-e29b-41d4-a716-446655440000');
    * console.log('Disbursement status:', disbursement.data.transaction.status);
    * ```
    */
@@ -197,12 +162,8 @@ export class DisbursementsAPI {
       throw new MarzPayError('Reference is required', 'MISSING_REFERENCE', 400);
     }
 
-    if (typeof reference !== 'string' || reference.trim().length === 0) {
-      throw new MarzPayError('Reference must be a non-empty string', 'INVALID_REFERENCE', 400);
-    }
-
-    if (reference.length > 100) {
-      throw new MarzPayError('Reference must be less than 100 characters', 'REFERENCE_TOO_LONG', 400);
+    if (!this.marzpay.utils.isValidUUID(reference)) {
+      throw new MarzPayError('Reference must be a valid UUID4', 'INVALID_REFERENCE', 400);
     }
   }
 
@@ -214,7 +175,7 @@ export class DisbursementsAPI {
    * 
    * @example
    * ```javascript
-   * const status = await marzpay.disbursements.getStatus('uuid-here');
+   * const status = await marzpay.disbursements.getStatus('550e8400-e29b-41d4-a716-446655440000');
    * console.log('Status:', status.data.transaction.status);
    * ```
    */
@@ -313,38 +274,40 @@ export class DisbursementsAPI {
   }
 
   /**
-   * Generate a unique reference for disbursements
+   * Generate a UUID4 reference for disbursements
    * 
-   * @param {string} prefix - Optional prefix for the reference
-   * @returns {string} Generated reference
+   * @returns {string} Generated UUID4 reference
    * 
    * @example
    * ```javascript
-   * const ref1 = marzpay.disbursements.generateReference(); // Returns: '550e8400-e29b-41d4-a716-446655440000'
-   * const ref2 = marzpay.disbursements.generateReference('refund'); // Returns: 'refund-550e8400-e29b-41d4-a716-446655440000'
+   * const reference = marzpay.disbursements.generateReference();
+   * // Returns: '550e8400-e29b-41d4-a716-446655440000'
+   * 
+   * const result = await marzpay.disbursements.sendMoney({
+   *   amount: 10000,
+   *   phoneNumber: '0759983853',
+   *   reference: reference,
+   *   description: 'Refund payment'
+   * });
    * ```
    */
-  generateReference(prefix = '') {
-    const uuid = uuidv4();
-    return prefix ? `${prefix}-${uuid}` : uuid;
+  generateReference() {
+    return uuidv4();
   }
 
   /**
-   * Validate reference format
+   * Validate reference is a valid UUID4
    * 
    * @param {string} reference - Reference to validate
-   * @returns {boolean} True if reference is valid
+   * @returns {boolean} True if reference is a valid UUID4
    * 
    * @example
    * ```javascript
-   * const isValid = marzpay.disbursements.isValidReference('refund-12345'); // true
-   * const isInvalid = marzpay.disbursements.isValidReference(''); // false
+   * const isValid = marzpay.disbursements.isValidReference('550e8400-e29b-41d4-a716-446655440000'); // true
+   * const isInvalid = marzpay.disbursements.isValidReference('invalid-ref'); // false
    * ```
    */
   isValidReference(reference) {
-    return reference && 
-           typeof reference === 'string' && 
-           reference.trim().length > 0 && 
-           reference.length <= 100;
+    return this.marzpay.utils.isValidUUID(reference);
   }
 }

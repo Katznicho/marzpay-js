@@ -17,7 +17,7 @@ import { MarzPayError } from '../errors/MarzPayError.js';
  * const result = await marzpay.collections.collectMoney({
  *   amount: 5000,
  *   phoneNumber: '0759983853',
- *   reference: 'ref-123456',
+ *   reference: '550e8400-e29b-41d4-a716-446655440000',
  *   description: 'Payment for services'
  * });
  * ```
@@ -33,7 +33,7 @@ export class CollectionsAPI {
    * @param {Object} params - Collection parameters
    * @param {number} params.amount - Amount in UGX (500-10,000,000)
    * @param {string} params.phoneNumber - Customer's phone number
-   * @param {string} params.reference - Unique reference for the transaction
+   * @param {string} params.reference - Unique UUID4 reference for the transaction
    * @param {string|null} [params.description] - Payment description
    * @param {string|null} [params.callbackUrl] - Custom webhook URL
    * @param {string} [params.country='UG'] - Country code
@@ -48,7 +48,7 @@ export class CollectionsAPI {
    *   const result = await marzpay.collections.collectMoney({
    *     amount: 10000,
    *     phoneNumber: '0759983853',
-   *     reference: 'order-12345',
+   *     reference: '550e8400-e29b-41d4-a716-446655440000',
    *     description: 'Product purchase',
    *     callbackUrl: 'https://yoursite.com/webhook'
    *   });
@@ -91,41 +91,6 @@ export class CollectionsAPI {
   }
 
   /**
-   * Collect money with auto-generated reference
-   * 
-   * @param {Object} params - Collection parameters (without reference)
-   * @param {number} params.amount - Amount in UGX (500-10,000,000)
-   * @param {string} params.phoneNumber - Customer's phone number
-   * @param {string|null} [params.description] - Payment description
-   * @param {string|null} [params.callbackUrl] - Custom webhook URL
-   * @param {string} [params.country='UG'] - Country code
-   * 
-   * @returns {Promise<Object>} Collection result with auto-generated reference
-   * 
-   * @example
-   * ```javascript
-   * // Auto-generate reference
-   * const result = await marzpay.collections.collectMoneyAuto({
-   *   amount: 10000,
-   *   phoneNumber: '0759983853',
-   *   description: 'Product purchase'
-   * });
-   * 
-   * console.log('Auto-generated reference:', result.data.transaction.reference);
-   * ```
-   */
-  async collectMoneyAuto(params) {
-    // Generate a unique reference
-    const reference = uuidv4();
-    
-    // Call the main collectMoney method with the generated reference
-    return this.collectMoney({
-      ...params,
-      reference
-    });
-  }
-
-  /**
    * Get collection details by UUID
    * 
    * @param {string} uuid - Collection transaction UUID
@@ -135,7 +100,7 @@ export class CollectionsAPI {
    * 
    * @example
    * ```javascript
-   * const collection = await marzpay.collections.getCollection('uuid-here');
+   * const collection = await marzpay.collections.getCollection('550e8400-e29b-41d4-a716-446655440000');
    * console.log('Collection status:', collection.data.transaction.status);
    * ```
    */
@@ -197,12 +162,8 @@ export class CollectionsAPI {
       throw new MarzPayError('Reference is required', 'MISSING_REFERENCE', 400);
     }
 
-    if (typeof reference !== 'string' || reference.trim().length === 0) {
-      throw new MarzPayError('Reference must be a non-empty string', 'INVALID_REFERENCE', 400);
-    }
-
-    if (reference.length > 100) {
-      throw new MarzPayError('Reference must be less than 100 characters', 'REFERENCE_TOO_LONG', 400);
+    if (!this.marzpay.utils.isValidUUID(reference)) {
+      throw new MarzPayError('Reference must be a valid UUID4', 'INVALID_REFERENCE', 400);
     }
   }
 
@@ -214,7 +175,7 @@ export class CollectionsAPI {
    * 
    * @example
    * ```javascript
-   * const status = await marzpay.collections.getStatus('uuid-here');
+   * const status = await marzpay.collections.getStatus('550e8400-e29b-41d4-a716-446655440000');
    * console.log('Status:', status.data.transaction.status);
    * ```
    */
@@ -258,38 +219,40 @@ export class CollectionsAPI {
   }
 
   /**
-   * Generate a unique reference for collections
+   * Generate a UUID4 reference for collections
    * 
-   * @param {string} prefix - Optional prefix for the reference
-   * @returns {string} Generated reference
+   * @returns {string} Generated UUID4 reference
    * 
    * @example
    * ```javascript
-   * const ref1 = marzpay.collections.generateReference(); // Returns: '550e8400-e29b-41d4-a716-446655440000'
-   * const ref2 = marzpay.collections.generateReference('order'); // Returns: 'order-550e8400-e29b-41d4-a716-446655440000'
+   * const reference = marzpay.collections.generateReference();
+   * // Returns: '550e8400-e29b-41d4-a716-446655440000'
+   * 
+   * const result = await marzpay.collections.collectMoney({
+   *   amount: 10000,
+   *   phoneNumber: '0759983853',
+   *   reference: reference,
+   *   description: 'Product purchase'
+   * });
    * ```
    */
-  generateReference(prefix = '') {
-    const uuid = uuidv4();
-    return prefix ? `${prefix}-${uuid}` : uuid;
+  generateReference() {
+    return uuidv4();
   }
 
   /**
-   * Validate reference format
+   * Validate reference is a valid UUID4
    * 
    * @param {string} reference - Reference to validate
-   * @returns {boolean} True if reference is valid
+   * @returns {boolean} True if reference is a valid UUID4
    * 
    * @example
    * ```javascript
-   * const isValid = marzpay.collections.isValidReference('order-12345'); // true
-   * const isInvalid = marzpay.collections.isValidReference(''); // false
+   * const isValid = marzpay.collections.isValidReference('550e8400-e29b-41d4-a716-446655440000'); // true
+   * const isInvalid = marzpay.collections.isValidReference('invalid-ref'); // false
    * ```
    */
   isValidReference(reference) {
-    return reference && 
-           typeof reference === 'string' && 
-           reference.trim().length > 0 && 
-           reference.length <= 100;
+    return this.marzpay.utils.isValidUUID(reference);
   }
 }
