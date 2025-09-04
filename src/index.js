@@ -1,460 +1,230 @@
-import { v4 as uuidv4 } from 'uuid';
+import { CollectionsAPI } from './classes/CollectionsAPI.js';
+import { DisbursementsAPI } from './classes/DisbursementsAPI.js';
+import { AccountsAPI } from './classes/AccountsAPI.js';
+import { BalanceAPI } from './classes/BalanceAPI.js';
+import { TransactionsAPI } from './classes/TransactionsAPI.js';
+import { ServicesAPI } from './classes/ServicesAPI.js';
+import { WebhooksAPI } from './classes/WebhooksAPI.js';
+import { PhoneNumberUtils } from './utils/PhoneNumberUtils.js';
+import { GeneralUtils } from './utils/GeneralUtils.js';
+import { MarzPayError } from './errors/MarzPayError.js';
 
-// Core MarzPay class
-class MarzPay {
-  constructor(config = {}) {
+/**
+ * MarzPay JavaScript SDK
+ * 
+ * Official JavaScript SDK for MarzPay - Mobile Money Payment Platform for Uganda
+ * 
+ * @example
+ * ```javascript
+ * import MarzPay from 'marzpay-js';
+ * 
+ * const marzpay = new MarzPay({
+ *   apiUser: 'your_username',
+ *   apiKey: 'your_api_key'
+ * });
+ * 
+ * // Collect money from customer
+ * const result = await marzpay.collections.collectMoney({
+ *   amount: 5000,
+ *   phoneNumber: '0759983853',
+ *   description: 'Payment for services'
+ * });
+ * ```
+ */
+export class MarzPay {
+  /**
+   * Create a new MarzPay instance
+   * 
+   * @param {Object} config - Configuration object
+   * @param {string} config.apiUser - Your MarzPay API username
+   * @param {string} config.apiKey - Your MarzPay API key
+   * @param {string} [config.baseUrl='https://wallet.wearemarz.com/api/v1'] - API base URL
+   * @param {number} [config.timeout=30000] - Request timeout in milliseconds
+   */
+  constructor(config) {
+    if (!config.apiUser || !config.apiKey) {
+      throw new MarzPayError('API credentials are required', 'MISSING_CREDENTIALS', 400);
+    }
+
     this.config = {
-      apiUser: config.apiUser || '',
-      apiKey: config.apiKey || '',
-      baseUrl: config.baseUrl || 'https://wallet.wearemarz.com/api/v1',
-      timeout: config.timeout || 30000,
+      baseUrl: 'https://wallet.wearemarz.com/api/v1',
+      timeout: 30000,
       ...config
     };
-    
+
+    // Initialize API modules
     this.collections = new CollectionsAPI(this);
     this.disbursements = new DisbursementsAPI(this);
     this.accounts = new AccountsAPI(this);
-    this.transactions = new TransactionsAPI(this);
-    this.webhooks = new WebhooksAPI(this);
-    this.services = new ServicesAPI(this);
     this.balance = new BalanceAPI(this);
-    this.utils = new Utils();
+    this.transactions = new TransactionsAPI(this);
+    this.services = new ServicesAPI(this);
+    this.webhooks = new WebhooksAPI(this);
+
+    // Initialize utility modules
+    this.phoneUtils = new PhoneNumberUtils();
+    this.utils = new GeneralUtils();
+
+    // Bind methods to maintain context
+    this.request = this.request.bind(this);
+    this.setCredentials = this.setCredentials.bind(this);
+    this.getAuthHeader = this.getAuthHeader.bind(this);
   }
 
-  // Set API credentials
+  /**
+   * Make HTTP request to MarzPay API
+   * 
+   * @param {string} endpoint - API endpoint (without base URL)
+   * @param {Object} options - Request options
+   * @param {string} [options.method='GET'] - HTTP method
+   * @param {Object} [options.body] - Request body
+   * @param {Object} [options.headers] - Additional headers
+   * 
+   * @returns {Promise<Object>} API response
+   * 
+   * @throws {MarzPayError} When request fails
+   * 
+   * @private
+   */
+  async request(endpoint, options = {}) {
+    const {
+      method = 'GET',
+      body,
+      headers = {}
+    } = options;
+
+    const url = `${this.config.baseUrl}${endpoint}`;
+    const requestOptions = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': this.getAuthHeader(),
+        ...headers
+      },
+      timeout: this.config.timeout
+    };
+
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      requestOptions.body = JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url, requestOptions);
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw MarzPayError.fromResponse(responseData, response.status);
+      }
+
+      return responseData;
+    } catch (error) {
+      if (error instanceof MarzPayError) {
+        throw error;
+      }
+
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw MarzPayError.networkError('Network request failed');
+      }
+
+      throw new MarzPayError(
+        error.message || 'Request failed',
+        'REQUEST_FAILED',
+        error.status || 0
+      );
+    }
+  }
+
+  /**
+   * Update API credentials at runtime
+   * 
+   * @param {string} apiUser - New API username
+   * @param {string} apiKey - New API key
+   */
   setCredentials(apiUser, apiKey) {
+    if (!apiUser || !apiKey) {
+      throw new MarzPayError('Both API username and key are required', 'MISSING_CREDENTIALS', 400);
+    }
+
     this.config.apiUser = apiUser;
     this.config.apiKey = apiKey;
   }
 
-  // Get authentication header
+  /**
+   * Get the current authentication header
+   * 
+   * @returns {string} Base64 encoded authorization header
+   */
   getAuthHeader() {
     const credentials = `${this.config.apiUser}:${this.config.apiKey}`;
     return `Basic ${btoa(credentials)}`;
   }
 
-  // Make HTTP request
-  async request(endpoint, options = {}) {
-    const url = `${this.config.baseUrl}${endpoint}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': this.getAuthHeader(),
-      ...options.headers
+  /**
+   * Get SDK version and information
+   * 
+   * @returns {Object} SDK information
+   */
+  getInfo() {
+    return {
+      name: 'MarzPay JavaScript SDK',
+      version: '1.0.0',
+      description: 'Official JavaScript SDK for MarzPay - Mobile Money Payment Platform for Uganda',
+      baseUrl: this.config.baseUrl,
+      features: [
+        'Collections API',
+        'Disbursements API',
+        'Accounts API',
+        'Balance API',
+        'Transactions API',
+        'Services API',
+        'Webhooks API',
+        'Phone Number Utilities',
+        'General Utilities',
+        'Error Handling'
+      ]
     };
+  }
 
-    const config = {
-      method: options.method || 'GET',
-      headers,
-      timeout: this.config.timeout,
-      ...options
-    };
-
-    if (options.body) {
-      config.body = JSON.stringify(options.body);
-    }
-
+  /**
+   * Test API connection
+   * 
+   * @returns {Promise<Object>} Connection test result
+   */
+  async testConnection() {
     try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new MarzPayError(data.message || 'Request failed', data.error_code || 'REQUEST_FAILED', response.status);
-      }
-
-      return data;
+      const response = await this.request('/account');
+      return {
+        status: 'success',
+        message: 'API connection successful',
+        data: {
+          account_status: response.data?.account?.status?.account_status || 'unknown',
+          business_name: response.data?.account?.business_name || 'unknown'
+        }
+      };
     } catch (error) {
-      if (error instanceof MarzPayError) {
-        throw error;
-      }
-      throw new MarzPayError(error.message, 'NETWORK_ERROR', 0);
+      return {
+        status: 'error',
+        message: 'API connection failed',
+        error: error.message,
+        code: error.code
+      };
     }
   }
 }
 
-// Collections API - Money collection from customers
-class CollectionsAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Collect money from customer
-  async collectMoney(params) {
-    const {
-      amount,
-      phoneNumber,
-      description = null,
-      callbackUrl = null,
-      country = 'UG'
-    } = params;
-
-    // Validate inputs
-    this.validateCollectionParams(params);
-
-    // Format phone number
-    const formattedPhone = this.marzpay.utils.formatPhoneNumber(phoneNumber);
-
-    const body = {
-      amount: parseInt(amount),
-      phone_number: formattedPhone,
-      reference: uuidv4(),
-      description,
-      callback_url: callbackUrl,
-      country
-    };
-
-    return this.marzpay.request('/collect-money', {
-      method: 'POST',
-      body
-    });
-  }
-
-  // Get collection by UUID
-  async getCollection(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Collection UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/collect-money/${uuid}`);
-  }
-
-  // Get collection services
-  async getCollectionServices() {
-    return this.marzpay.request('/collect-money/services');
-  }
-
-  // Validate collection parameters
-  validateCollectionParams(params) {
-    const { amount, phoneNumber } = params;
-
-    if (!amount || amount < 500 || amount > 10000000) {
-      throw new MarzPayError(
-        'Amount must be between 500 and 10,000,000 UGX',
-        'INVALID_AMOUNT',
-        400
-      );
-    }
-
-    if (!phoneNumber) {
-      throw new MarzPayError('Phone number is required', 'MISSING_PHONE', 400);
-    }
-
-    if (!this.marzpay.utils.isValidPhoneNumber(phoneNumber)) {
-      throw new MarzPayError('Invalid phone number format', 'INVALID_PHONE', 400);
-    }
-  }
-}
-
-// Disbursements API - Send money to customers
-class DisbursementsAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Send money to customer
-  async sendMoney(params) {
-    const {
-      amount,
-      phoneNumber,
-      description = null,
-      callbackUrl = null,
-      country = 'UG'
-    } = params;
-
-    // Validate inputs
-    this.validateDisbursementParams(params);
-
-    // Format phone number
-    const formattedPhone = this.marzpay.utils.formatPhoneNumber(phoneNumber);
-
-    const body = {
-      amount: parseInt(amount),
-      phone_number: formattedPhone,
-      reference: uuidv4(),
-      description,
-      callback_url: callbackUrl,
-      country
-    };
-
-    return this.marzpay.request('/send-money', {
-      method: 'POST',
-      body
-    });
-  }
-
-  // Get disbursement by UUID
-  async getDisbursement(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Disbursement UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/send-money/${uuid}`);
-  }
-
-  // Get disbursement services
-  async getDisbursementServices() {
-    return this.marzpay.request('/send-money/services');
-  }
-
-  // Validate disbursement parameters
-  validateDisbursementParams(params) {
-    const { amount, phoneNumber } = params;
-
-    if (!amount || amount < 1000 || amount > 500000) {
-      throw new MarzPayError(
-        'Amount must be between 1,000 and 500,000 UGX',
-        'INVALID_AMOUNT',
-        400
-      );
-    }
-
-    if (!phoneNumber) {
-      throw new MarzPayError('Phone number is required', 'MISSING_PHONE', 400);
-    }
-
-    if (!this.marzpay.utils.isValidPhoneNumber(phoneNumber)) {
-      throw new MarzPayError('Invalid phone number format', 'INVALID_PHONE', 400);
-    }
-  }
-}
-
-// Accounts API - Account management and balance
-class AccountsAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Get account information
-  async getAccountInfo() {
-    return this.marzpay.request('/account');
-  }
-
-  // Update account information
-  async updateAccount(settings) {
-    return this.marzpay.request('/account', {
-      method: 'PUT',
-      body: settings
-    });
-  }
-}
-
-// Balance API - Balance management
-class BalanceAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Get account balance
-  async getBalance() {
-    return this.marzpay.request('/balance');
-  }
-
-  // Get balance history
-  async getBalanceHistory(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.marzpay.request(`/balance/history?${queryParams}`);
-  }
-}
-
-// Transactions API - Transaction management
-class TransactionsAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Get all transactions
-  async getTransactions(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.marzpay.request(`/transactions?${queryParams}`);
-  }
-
-  // Get transaction by UUID
-  async getTransaction(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Transaction UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/transactions/${uuid}`);
-  }
-}
-
-// Services API - Service management
-class ServicesAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Get all services
-  async getServices(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.marzpay.request(`/services?${queryParams}`);
-  }
-
-  // Get service by UUID
-  async getService(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Service UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/services/${uuid}`);
-  }
-}
-
-// Webhooks API - Webhook management
-class WebhooksAPI {
-  constructor(marzpay) {
-    this.marzpay = marzpay;
-  }
-
-  // Get all webhooks
-  async getWebhooks(params = {}) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.marzpay.request(`/webhooks?${queryParams}`);
-  }
-
-  // Create webhook
-  async createWebhook(params) {
-    const { name, url, eventType, environment, isActive = true } = params;
-
-    if (!name || !url || !eventType || !environment) {
-      throw new MarzPayError('Name, URL, event type, and environment are required', 'MISSING_REQUIRED_FIELDS', 400);
-    }
-
-    return this.marzpay.request('/webhooks', {
-      method: 'POST',
-      body: { name, url, event_type: eventType, environment, is_active: isActive }
-    });
-  }
-
-  // Get webhook by UUID
-  async getWebhook(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Webhook UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/webhooks/${uuid}`);
-  }
-
-  // Update webhook
-  async updateWebhook(uuid, params) {
-    if (!uuid) {
-      throw new MarzPayError('Webhook UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/webhooks/${uuid}`, {
-      method: 'PUT',
-      body: params
-    });
-  }
-
-  // Delete webhook
-  async deleteWebhook(uuid) {
-    if (!uuid) {
-      throw new MarzPayError('Webhook UUID is required', 'MISSING_UUID', 400);
-    }
-
-    return this.marzpay.request(`/webhooks/${uuid}`, {
-      method: 'DELETE'
-    });
-  }
-}
-
-// Utilities class
-class Utils {
-  // Format phone number to +256XXXXXXXXX format
-  formatPhoneNumber(phone) {
-    if (!phone) return null;
-
-    // Remove all non-digit characters
-    let cleaned = phone.replace(/\D/g, '');
-
-    // Handle different formats
-    if (cleaned.startsWith('0')) {
-      // Local format: 0759983853 -> +256759983853
-      cleaned = '256' + cleaned.substring(1);
-    } else if (cleaned.startsWith('256')) {
-      // Already in correct format
-      cleaned = cleaned;
-    } else if (cleaned.length === 9) {
-      // 9 digits: 759983853 -> +256759983853
-      cleaned = '256' + cleaned;
-    }
-
-    // Add + prefix
-    return `+${cleaned}`;
-  }
-
-  // Validate phone number format
-  isValidPhoneNumber(phone) {
-    if (!phone) return false;
-
-    const formatted = this.formatPhoneNumber(phone);
-    if (!formatted) return false;
-
-    // Check if it matches +256XXXXXXXXX format
-    const phoneRegex = /^\+256[0-9]{9}$/;
-    return phoneRegex.test(formatted);
-  }
-
-  // Validate amount
-  isValidAmount(amount, min = 100, max = 10000000) {
-    const numAmount = parseInt(amount);
-    return !isNaN(numAmount) && numAmount >= min && numAmount <= max;
-  }
-
-  // Generate reference
-  generateReference() {
-    return uuidv4();
-  }
-
-  // Format amount to UGX
-  formatAmount(amount) {
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX'
-    }).format(amount);
-  }
-
-  // Parse amount from UGX string
-  parseAmount(amountString) {
-    return parseInt(amountString.replace(/[^\d]/g, ''));
-  }
-
-  // Build query string from parameters
-  buildQueryString(params) {
-    const queryParams = new URLSearchParams();
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        queryParams.append(key, value);
-      }
-    });
-    
-    return queryParams.toString();
-  }
-
-  // Validate UUID format
-  isValidUUID(uuid) {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
-  }
-
-  // Sanitize input string
-  sanitizeString(input) {
-    if (typeof input !== 'string') return input;
-    return input.trim().replace(/[<>]/g, '');
-  }
-}
-
-// Custom error class
-class MarzPayError extends Error {
-  constructor(message, code, status) {
-    super(message);
-    this.name = 'MarzPayError';
-    this.code = code;
-    this.status = status;
-  }
-}
-
-// Export the library
+// Export the main class
 export default MarzPay;
-export { MarzPay, MarzPayError };
+
+// Export all classes for individual use
+export {
+  CollectionsAPI,
+  DisbursementsAPI,
+  AccountsAPI,
+  BalanceAPI,
+  TransactionsAPI,
+  ServicesAPI,
+  WebhooksAPI,
+  PhoneNumberUtils,
+  GeneralUtils,
+  MarzPayError
+};
