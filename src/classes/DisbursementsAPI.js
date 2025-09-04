@@ -73,7 +73,7 @@ export class DisbursementsAPI {
     this.validateDisbursementParams(params);
 
     // Format phone number
-    const formattedPhone = this.marzpay.utils.formatPhoneNumber(phoneNumber);
+    const formattedPhone = this.marzpay.phoneUtils.formatPhoneNumber(phoneNumber);
 
     const body = {
       amount: parseInt(amount),
@@ -154,7 +154,7 @@ export class DisbursementsAPI {
       throw new MarzPayError('Phone number is required', 'MISSING_PHONE', 400);
     }
 
-    if (!this.marzpay.utils.isValidPhoneNumber(phoneNumber)) {
+    if (!this.marzpay.phoneUtils.isValidPhoneNumber(phoneNumber)) {
       throw new MarzPayError('Invalid phone number format', 'INVALID_PHONE', 400);
     }
 
